@@ -24,13 +24,21 @@
   --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, "Courier New", monospace;
   --sans: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, "Courier New", monospace;
 }
+/* Light theme vars — applied on system-light (Auto) or explicit data-theme=light.
+   An explicit data-theme=dark keeps the dark :root defaults on any system. */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #e8e8f2; --bg-2: #dedeec; --bg-3: #d2d2e4; --panel: #f6f6fc;
     --border: #b8b8d0; --border-soft: #cacae0; --text: #16162a; --text-dim: #55556f; --text-mute: #8888a4;
     --grad-soft: linear-gradient(100deg, rgba(255,45,156,.14), rgba(99,102,241,.10));
     --ok: #08b487; --shadow: 4px 4px 0 rgba(80,60,110,.25); --shadow-sm: 3px 3px 0 rgba(80,60,110,.22);
   }
+}
+:root[data-theme="light"] {
+  --bg: #e8e8f2; --bg-2: #dedeec; --bg-3: #d2d2e4; --panel: #f6f6fc;
+  --border: #b8b8d0; --border-soft: #cacae0; --text: #16162a; --text-dim: #55556f; --text-mute: #8888a4;
+  --grad-soft: linear-gradient(100deg, rgba(255,45,156,.14), rgba(99,102,241,.10));
+  --ok: #08b487; --shadow: 4px 4px 0 rgba(80,60,110,.25); --shadow-sm: 3px 3px 0 rgba(80,60,110,.22);
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
@@ -38,21 +46,29 @@ body {
   background:
     radial-gradient(1200px 600px at 15% -10%, rgba(255,45,156,.10), transparent 60%),
     radial-gradient(1000px 500px at 100% 0%, rgba(99,102,241,.12), transparent 55%),
-    /* pixel grid */
-    repeating-linear-gradient(0deg, rgba(255,255,255,.022) 0 1px, transparent 1px 8px),
-    repeating-linear-gradient(90deg, rgba(255,255,255,.022) 0 1px, transparent 1px 8px),
     var(--bg);
   color: var(--text); font-family: var(--sans);
   font-size: 13px; display: flex; flex-direction: column; overflow: hidden;
   image-rendering: pixelated;
   -webkit-font-smoothing: antialiased;
 }
-/* scanline overlay */
+/* pixel grid layer (toggleable via Settings) */
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.022) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.022) 0 1px, transparent 1px 8px);
+}
+body.no-grid::after { display: none; }
+/* scanline overlay (toggleable via Settings) */
 body::before {
   content: ""; position: fixed; inset: 0; z-index: 999; pointer-events: none;
   background: repeating-linear-gradient(0deg, rgba(0,0,0,.10) 0 1px, transparent 1px 3px);
   mix-blend-mode: multiply; opacity: .5;
 }
+body.no-scanlines::before { display: none; }
+body.hide-lineno .raw .lineno { display: none; }
+#app { display: flex; flex-direction: column; min-height: 0; flex: 1; position: relative; z-index: 1; }
 button, select, input { font-family: inherit; font-size: 12px; }
 
 /* ---- Top bar ---- */
@@ -92,7 +108,10 @@ select.btn { background-color: var(--bg-3); color: var(--text); -webkit-appearan
 select.btn:hover { background-color: var(--bg-3); }
 select.btn option { background: #12122a; color: var(--text); }
 select.btn optgroup { background: #0d0d1c; color: var(--text-dim); font-style: normal; }
-@media (prefers-color-scheme: light) { select.btn option { background: #f0f0fa; } select.btn optgroup { background: #e4e4f2; } }
+@media (prefers-color-scheme: light) { :root:not([data-theme]) select.btn option { background: #f0f0fa; } :root:not([data-theme]) select.btn optgroup { background: #e4e4f2; } }
+:root[data-theme="light"] select.btn option { background: #f0f0fa; }
+:root[data-theme="light"] select.btn optgroup { background: #e4e4f2; }
+.icon-btn { padding: 8px 11px; font-size: 15px; line-height: 1; }
 .phi { color: var(--text-mute); font-size: 11px; display: flex; align-items: center; gap: 6px; }
 .phi .dot { width: 8px; height: 8px; background: var(--ok); box-shadow: 0 0 8px var(--ok); }
 
@@ -256,3 +275,34 @@ table.elts tr:hover td { background: rgba(255,255,255,.03); }
 
 .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--bg-3); border: 2px solid var(--border); padding: 11px 20px; box-shadow: var(--shadow); z-index: 1000; }
 .toast.err { border-color: var(--error); color: var(--error); }
+
+/* ---- Settings modal ---- */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center;
+  background: rgba(4,4,10,.66); backdrop-filter: blur(3px); padding: 24px;
+}
+.modal {
+  width: 100%; max-width: 560px; max-height: 88vh; overflow: auto;
+  background: var(--panel); border: 2px solid var(--border); box-shadow: var(--shadow);
+}
+.modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 2px solid var(--border); position: sticky; top: 0; background: var(--panel); }
+.modal-head h2 { font-family: var(--pixel); font-size: 15px; margin: 0; font-weight: 700; letter-spacing: -.3px; }
+.modal-x { background: none; border: none; color: var(--text-dim); font-size: 16px; cursor: pointer; padding: 4px 8px; }
+.modal-x:hover { color: var(--accent); }
+.modal-body { padding: 8px 20px 12px; }
+.settings-section { padding: 12px 0; border-bottom: 1px solid var(--border-soft); }
+.settings-section:last-child { border-bottom: none; }
+.settings-section h3 { font-family: var(--pixel); margin: 0 0 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); }
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 9px 0; cursor: pointer; }
+.setting-txt { min-width: 0; }
+.setting-label { font-size: 13px; }
+.setting-hint { color: var(--text-mute); font-size: 11px; margin-top: 2px; line-height: 1.4; }
+.setting-row select.btn { flex: 0 0 auto; min-width: 140px; }
+
+/* toggle switch */
+.switch { position: relative; flex: 0 0 auto; width: 42px; height: 22px; background: var(--bg-3); border: 2px solid var(--border); transition: .12s; }
+.switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.switch .knob { position: absolute; top: 1px; left: 1px; width: 16px; height: 16px; background: var(--text-mute); transition: .12s; }
+.switch.on { background: var(--grad); border-color: rgba(255,255,255,.25); }
+.switch.on .knob { left: 21px; background: #fff; }
+.modal-foot { display: flex; justify-content: space-between; gap: 10px; padding: 14px 20px; border-top: 2px solid var(--border); position: sticky; bottom: 0; background: var(--panel); }

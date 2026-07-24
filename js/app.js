@@ -23,10 +23,23 @@
     els.profileSelect = $('profileSelect');
     els.sidebarTitle = $('sidebarTitle');
 
+    // Settings (restores last profile before the dropdown is built)
+    if (window.Settings) {
+      Settings.init({ onChange: onSettingsChange });
+      if (Settings.get('rememberProfile')) {
+        const lp = Settings.get('lastProfile');
+        if (lp === 'auto' || lp === 'none' || (window.DEFAULT_SEFS && window.DEFAULT_SEFS[lp])) state.sefKey = lp;
+      }
+    }
+
     populateProfiles();
     wireControls();
     setActiveTab('overview');
   });
+
+  function onSettingsChange(kind) {
+    if (kind === 'validation' && state.parsed) rerun();
+  }
 
   function populateProfiles() {
     const sel = els.profileSelect;
@@ -53,7 +66,12 @@
     $('loadSefBtn').addEventListener('click', function () { $('sefFile').click(); });
     $('sefFile').addEventListener('change', function (e) { if (e.target.files[0]) readSefFile(e.target.files[0]); });
     $('sampleBtn').addEventListener('click', function () { loadEdi(window.SAMPLE_EDI, 'sample-837p.edi'); });
-    els.profileSelect.addEventListener('change', function (e) { state.sefKey = e.target.value; applyProfile(); rerun(); });
+    const sb = $('settingsBtn'); if (sb && window.Settings) sb.addEventListener('click', function () { Settings.open(); });
+    els.profileSelect.addEventListener('change', function (e) {
+      state.sefKey = e.target.value;
+      if (window.Settings && Settings.get('rememberProfile')) Settings.set('lastProfile', state.sefKey);
+      applyProfile(); rerun();
+    });
 
     // drag & drop
     ['dragover', 'dragenter'].forEach(function (ev) {
@@ -147,7 +165,8 @@
 
   function rerun() {
     if (!state.parsed) return;
-    state.result = Validator.validate(state.parsed, state.sef);
+    const vopts = window.Settings ? Settings.validationOptions() : undefined;
+    state.result = Validator.validate(state.parsed, state.sef, vopts);
     UI.renderTree(els.tree, state.parsed, state.sef, selectSegment);
     updateBadges();
     renderActiveTab();

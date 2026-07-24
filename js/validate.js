@@ -8,6 +8,11 @@
 
   const SEV = { ERROR: 'error', WARNING: 'warning', INFO: 'info' };
 
+  // Validation options (toggled via Settings). Module-scoped for the duration
+  // of a validate() call so the per-segment helpers can read them.
+  const DEFAULT_OPT = { showInfo: true, flagUnknown: true, flagMaxLen: true, checkStructure: true };
+  let OPT = DEFAULT_OPT;
+
   function loc(seg) { return seg ? (seg.id + ' #' + (seg.index + 1)) : ''; }
 
   function typeConforms(type, value) {
@@ -43,7 +48,7 @@
   function validateSegmentElements(seg, sef, diags, path) {
     const def = sef && sef.segments[seg.id];
     if (!def) {
-      if (sef && sef.counts.segments > 0) {
+      if (sef && sef.counts.segments > 0 && OPT.flagUnknown) {
         pushDiag(diags, seg, SEV.WARNING, 'SEG_UNKNOWN', 'Segment ' + seg.id + ' is not defined in the active SEF profile.', null, path);
       }
       return;
@@ -67,7 +72,7 @@
       if (d) {
         // Length is measured against the raw value so space-padded fixed-width
         // fields (e.g. the 15-char ISA sender/receiver ids) are not miscounted.
-        if (d.max && raw.length > d.max) {
+        if (d.max && raw.length > d.max && OPT.flagMaxLen) {
           pushDiag(diags, seg, SEV.WARNING, 'ELE_MAXLEN', 'Element ' + edef.ref + ' length ' + raw.length + ' exceeds max ' + d.max + '.', pos, path);
         }
         if (d.min && raw.length < d.min) {
@@ -85,7 +90,7 @@
       }
     });
     // Extra elements beyond definition
-    if (seg.elements.length > def.elements.length) {
+    if (seg.elements.length > def.elements.length && OPT.flagUnknown) {
       pushDiag(diags, seg, SEV.WARNING, 'SEG_EXTRA', 'Segment ' + seg.id + ' has ' + seg.elements.length + ' elements; profile defines ' + def.elements.length + '.', null, path);
     }
   }
@@ -118,7 +123,7 @@
     }
 
     // Implementation reference vs SEF standard version (informational)
-    if (sef && sef.std && sef.std.version && txn.implRef && txn.implRef !== sef.std.version) {
+    if (OPT.showInfo && sef && sef.std && sef.std.version && txn.implRef && txn.implRef !== sef.std.version) {
       pushDiag(diags, txn.st, SEV.INFO, 'IMPL_REF', 'ST03 implementation reference "' + txn.implRef + '" differs from profile version "' + sef.std.version + '".', 3, path);
     }
 
@@ -130,7 +135,7 @@
 
     // Structure: mandatory expected segments present
     const setDef = sef && sef.sets && sef.sets[txn.setId];
-    if (setDef && setDef.structure && setDef.structure.length) {
+    if (OPT.checkStructure && setDef && setDef.structure && setDef.structure.length) {
       const expected = [];
       flattenExpected(setDef.structure, expected, '');
       const present = {};
@@ -182,7 +187,8 @@
     });
   }
 
-  function validate(parsed, sef) {
+  function validate(parsed, sef, options) {
+    OPT = Object.assign({}, DEFAULT_OPT, options || {});
     const diags = [];
     // reset annotations
     parsed.segments.forEach(function (s) { s.diagnostics = null; s.def = null; s.elements.forEach(function (e) { e.diag = null; }); });

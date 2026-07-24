@@ -44,6 +44,18 @@ Then:
 - **Raw view** — line-numbered segments with delimiters highlighted and rows
   tinted by severity.
 
+## Settings (⚙)
+
+Open the gear in the top bar. All settings persist in `localStorage`:
+
+- **Appearance** — theme (Auto / Dark / Light), UI scale, CRT scanline overlay,
+  pixel-grid background.
+- **Validation** — show info findings, flag items not in the profile, flag
+  over-length values, check for missing required segments. Changing these
+  re-validates the loaded file immediately.
+- **Data view & session** — Raw-view line numbers; remember the last selected
+  profile across launches.
+
 ## Supported transactions (bundled SEF profiles)
 
 `sef/` contains a reference profile for each of these 5010 transaction sets:
