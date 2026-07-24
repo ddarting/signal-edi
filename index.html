@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signal EDI — HIPAA X12 Diagnostic Console</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <span class="mark">◢</span>
+      <h1>Signal EDI</h1>
+      <span class="sub">HIPAA X12 Diagnostic Console</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="control">
+      <label>Profile</label>
+      <select id="profileSelect" class="btn" title="SEF validation profile"></select>
+      <span id="profileNote" class="phi" style="min-width:0"></span>
+    </div>
+    <div class="control">
+      <button id="loadSefBtn" class="btn" title="Load a third-party .sef file">Load SEF…</button>
+      <button id="sampleBtn" class="btn">Sample</button>
+      <button id="openEdiBtn" class="btn primary">Open EDI file</button>
+    </div>
+    <div class="phi" title="All parsing happens in your browser. No file contents are uploaded.">
+      <span class="dot"></span> Local only · PHI never leaves this machine
+    </div>
+    <input type="file" id="ediFile" class="hidden" accept=".edi,.txt,.x12,.837,.835,.834,.270,.271,.276,.277,.278,.820,.999,.dat,*">
+    <input type="file" id="sefFile" class="hidden" accept=".sef">
+  </div>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <div class="side-head"><span id="sidebarTitle">Structure</span><span>ISA · GS · ST</span></div>
+      <div id="tree" class="tree"></div>
+    </aside>
+
+    <section class="main hidden" id="main">
+      <div class="tabbar" id="tabbar">
+        <div class="tab active" data-tab="overview" onclick="__signalSetTab('overview')">Overview</div>
+        <div class="tab" data-tab="inspector" onclick="__signalSetTab('inspector')">Segment Inspector</div>
+        <div class="tab" data-tab="validation" onclick="__signalSetTab('validation')">
+          Validation
+          <span id="badge-validation-error" class="badge error hidden">0</span>
+          <span id="badge-validation-warn" class="badge warning hidden">0</span>
+        </div>
+        <div class="tab" data-tab="raw" onclick="__signalSetTab('raw')">Raw</div>
+      </div>
+      <div class="tabcontent" id="tabcontent"></div>
+    </section>
+
+    <section class="empty" id="empty">
+      <div class="big">◢</div>
+      <h2>Drop a HIPAA EDI file to begin</h2>
+      <div class="hint">
+        Open or drag an X12 file (837, 835, 834, 270/271, 276/277, 278, 820, 999…).
+        Signal EDI auto-detects the delimiters and matches a bundled <code>.sef</code> profile
+        by its implementation reference. Choose a different profile or
+        <strong>Load SEF…</strong> to validate against your own guideline files.
+        <br><br>Everything runs offline in your browser — nothing is uploaded.
+      </div>
+      <div><button class="btn primary" onclick="document.getElementById('ediFile').click()">Open EDI file</button>
+        &nbsp;<button class="btn" onclick="document.getElementById('sampleBtn').click()">Load sample 837P</button></div>
+    </section>
+  </div>
+
+  <script src="js/default-sefs.js"></script>
+  <script src="js/sample.js"></script>
+  <script src="js/x12.js"></script>
+  <script src="js/sef.js"></script>
+  <script src="js/validate.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

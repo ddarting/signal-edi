@@ -1,0 +1,335 @@
+.SEF 1.6
+; Signal EDI simplified reference profile — not an exhaustive TR3 implementation guide.
+.STD
+X12|005010X221A1|835|Claim Payment / Remittance
+.ELMS
+1028=AN,1,38
+1029=AN,0,0
+1032=ID,1,2
+1033=ID,1,2
+1034=ID,1,5
+1035=AN,1,60
+1036=AN,1,35
+1037=AN,1,25
+1038=AN,1,10
+1039=AN,1,10
+1065=ID,1,1
+116=ID,3,15
+124=AN,2,15
+1250=ID,2,3
+1251=AN,1,35
+127=AN,1,50
+128=ID,2,3
+1325=ID,1,2
+1331=AN,0,0
+142=AN,2,15
+143=ID,3,3
+156=ID,2,2
+166=AN,1,55
+1705=AN,1,35
+19=AN,2,30
+234=AN,1,48
+26=ID,2,3
+28=N0,1,9
+305=AN,0,0
+329=AN,4,9
+337=TM,4,8
+352=AN,1,264
+364=AN,1,256
+365=ID,2,2
+366=AN,0,0
+373=DT,8,8
+374=ID,3,3
+380=R,1,15
+455=ID,1,2
+478=AN,0,0
+479=ID,2,2
+480=AN,1,12
+481=ID,1,2
+506=ID,2,3
+508=AN,1,35
+509=AN,0,0
+510=AN,0,0
+522=ID,1,2
+554=AN,0,0
+569=ID,2,2
+591=ID,1,1
+66=ID,1,2
+67=AN,2,80
+673=ID,2,2
+782=R,1,18
+812=ID,1,2
+93=AN,0,0
+96=N0,1,10
+97=N0,1,6
+98=ID,2,3
+C003=AN,0,0
+C042=AN,0,0
+I01=ID,2,2
+I02=AN,10,10
+I03=ID,2,2
+I04=AN,10,10
+I05=ID,2,2
+I06=AN,15,15
+I07=AN,15,15
+I08=DT,6,6
+I09=TM,4,4
+I10=AN,1,1
+I11=ID,5,5
+I12=N0,9,9
+I13=ID,1,1
+I14=ID,1,1
+I15=AN,1,1
+I16=N0,1,5
+.CODES
+1032=11,12,13,14,15,16,CI,MB,MC,ZZ
+1065=1,2
+1250=D8,RD8,DT
+143=837,835,834,270,271,276,277,278,820,999,997
+374=434,435,472,096,090,091,150,151
+455=X
+591=ACH,BOP,CHK,FWT,NON
+66=XX,MI,PI,46,FI,24,34
+98=41,40,85,87,IL,QC,PR,82,77,DN,DK,31,P5,IN,36
+I05=ZZ,01,14,20,27,28,30,33
+I14=P,T,I
+.CODETEXT
+1032,11=Other Non-Federal Programs
+1032,12=PPO
+1032,13=POS
+1032,14=EPO
+1032,15=Indemnity Insurance
+1032,16=HMO Medicare Risk
+1032,CI=Commercial Insurance Co.
+1032,MB=Medicare Part B
+1032,MC=Medicaid
+1032,ZZ=Mutually Defined
+1065,1=Person
+1065,2=Non-Person Entity
+1250,D8=Date Expressed in CCYYMMDD Format
+1250,RD8=Range of Dates CCYYMMDD-CCYYMMDD
+1250,DT=Date and Time
+143,837=Health Care Claim
+143,835=Claim Payment/Advice
+143,834=Benefit Enrollment
+143,270=Eligibility Inquiry
+143,271=Eligibility Response
+143,276=Claim Status Request
+143,277=Claim Status Response
+143,278=Services Review
+143,820=Premium Payment
+143,999=Implementation Acknowledgment
+143,997=Functional Acknowledgment
+374,434=Statement
+374,435=Admission
+374,472=Service
+374,096=Discharge
+374,090=Report Start
+374,091=Report End
+374,150=Service Period Start
+374,151=Service Period End
+455,X=Accredited Standards Committee X12
+591,ACH=Automated Clearing House
+591,BOP=Financial Institution Option
+591,CHK=Check
+591,FWT=Federal Reserve Funds/Wire Transfer
+591,NON=Non-Payment Data
+66,XX=NPI (Centers for Medicare and Medicaid Services National Provider Identifier)
+66,MI=Member Identification Number
+66,PI=Payor Identification
+66,46=Electronic Transmitter Identification Number
+66,FI=Federal Taxpayer Identification Number
+66,24=Employer Identification Number
+66,34=Social Security Number
+98,41=Submitter
+98,40=Receiver
+98,85=Billing Provider
+98,87=Pay-to Provider
+98,IL=Insured or Subscriber
+98,QC=Patient
+98,PR=Payer
+98,82=Rendering Provider
+98,77=Service Location
+98,DN=Referring Provider
+98,DK=Ordering Provider
+98,31=Postal Mailing Address
+98,P5=Plan Sponsor
+98,IN=Insurer
+98,36=Employer
+I05,ZZ=Mutually Defined
+I05,01=Duns (Dun & Bradstreet)
+I05,14=Duns Plus Suffix
+I05,20=Health Industry Number
+I05,27=Carrier Identification Number
+I05,28=Fiscal Intermediary Identification Number
+I05,30=U.S. Federal Tax Identification Number
+I05,33=NAIC Company Code
+I14,P=Production Data
+I14,T=Test Data
+I14,I=Information
+.SEGS
+ISA=I01,M,1,I02,O,1,I03,M,1,I04,O,1,I05,M,1,I06,M,1,I05,M,1,I07,M,1,I08,M,1,I09,M,1,I10,M,1,I11,M,1,I12,M,1,I13,M,1,I14,M,1,I15,M,1
+GS=479,M,1,142,M,1,124,M,1,373,M,1,337,M,1,28,M,1,455,M,1,480,M,1
+GE=97,M,1,28,M,1
+IEA=I16,M,1,I12,M,1
+ST=143,M,1,329,M,1,1705,O,1
+SE=96,M,1,329,M,1
+BPR=305,M,1,782,M,1,478,M,1,591,M,1,812,O,1,506,O,1,569,O,1,508,O,1,509,O,1,510,O,1,506,O,1,569,O,1,508,O,1,373,O,1
+TRN=481,M,1,127,M,1,509,O,1,127,O,1
+REF=128,M,1,127,O,1,352,O,1
+DTM=374,M,1,373,O,1,337,O,1
+N1=98,M,1,93,O,1,66,O,1,67,O,1
+N3=166,M,1,166,O,1
+N4=19,O,1,156,O,1,116,O,1,26,O,1
+PER=366,O,1,93,O,1,365,O,1,364,O,1,365,O,1,364,O,1
+LX=554,M,1
+TS3=127,M,1,1331,M,1,373,M,1,380,M,1,782,M,1
+CLP=1028,M,1,1029,M,1,782,M,1,782,M,1,782,O,1,1032,M,1,127,M,1,1331,O,1,1325,O,1
+CAS=1033,M,1,1034,M,1,782,M,1,380,O,1,1034,O,1,782,O,1
+NM1=98,M,1,1065,M,1,1035,O,1,1036,O,1,1037,O,1,1038,O,1,1039,O,1,66,O,1,67,O,1
+SVC=C003,M,1,782,M,1,782,M,1,234,O,1,380,O,1
+DTP=374,M,1,1250,M,1,1251,M,1
+AMT=522,M,1,782,M,1
+QTY=673,M,1,380,O,1
+PLB=127,M,1,373,M,1,C042,M,1,782,M,1
+.SEGTEXT
+ISA=Interchange Control Header
+GS=Functional Group Header
+GE=Functional Group Trailer
+IEA=Interchange Control Trailer
+ST=Transaction Set Header
+SE=Transaction Set Trailer
+BPR=Financial Information
+TRN=Trace
+REF=Reference Information
+DTM=Date/Time Reference
+N1=Party Identification
+N3=Party Location (Address)
+N4=Geographic Location
+PER=Administrative Communications Contact
+LX=Service Line Number
+TS3=Provider Summary Information
+CLP=Claim Payment Information
+CAS=Claim Adjustment
+NM1=Individual or Organizational Name
+SVC=Service Payment Information
+DTP=Date or Time or Period
+AMT=Monetary Amount Information
+QTY=Quantity Information
+PLB=Provider Adjustment
+.ELETEXT
+1028=Claim Submitter Identifier
+1029=Data Element 1029
+1032=Claim Filing Indicator Code
+1033=Claim Adjustment Group Code
+1034=Claim Adjustment Reason Code
+1035=Name Last or Organization Name
+1036=Name First
+1037=Name Middle
+1038=Name Prefix
+1039=Name Suffix
+1065=Entity Type Qualifier
+116=Postal Code
+124=Application Receiver's Code
+1250=Date Time Period Format Qualifier
+1251=Date Time Period
+127=Reference Identification
+128=Reference Identification Qualifier
+1325=Claim Status Category Code
+1331=Data Element 1331
+142=Application Sender's Code
+143=Transaction Set Identifier Code
+156=State or Province Code
+166=Address Information
+1705=Implementation Convention Reference
+19=City Name
+234=Product/Service ID
+26=Country Code
+28=Group Control Number
+305=Data Element 305
+329=Transaction Set Control Number
+337=Time
+352=Description
+364=Communication Number
+365=Communication Number Qualifier
+366=Data Element 366
+373=Date
+374=Date/Time Qualifier
+380=Quantity
+455=Responsible Agency Code
+478=Data Element 478
+479=Functional Identifier Code
+480=Version / Release / Industry Identifier Code
+481=Payment Action Code
+506=DFI ID Number Qualifier
+508=Account Number
+509=Data Element 509
+510=Data Element 510
+522=Amount Qualifier Code
+554=Data Element 554
+569=Account Number Qualifier
+591=Payment Method Code
+66=Identification Code Qualifier
+67=Identification Code
+673=Quantity Qualifier
+782=Monetary Amount
+812=Payment Format Code
+93=Data Element 93
+96=Number of Included Segments
+97=Number of Transaction Sets Included
+98=Entity Identifier Code
+C003=Composite Element
+C042=Composite Element
+I01=Authorization Information Qualifier
+I02=Authorization Information
+I03=Security Information Qualifier
+I04=Security Information
+I05=Interchange ID Qualifier
+I06=Interchange Sender / Receiver ID
+I07=Interchange Receiver ID
+I08=Interchange Date
+I09=Interchange Time
+I10=Repetition Separator
+I11=Interchange Control Version Number
+I12=Interchange Control Number
+I13=Acknowledgment Requested
+I14=Interchange Usage Indicator
+I15=Component Element Separator
+I16=Number of Included Functional Groups
+.SETS
+835=Health Care Claim Payment/Advice
+seg ST M 1
+seg BPR M 1
+seg TRN M 1
+seg REF O 1
+seg DTM O 1
+loop 1000A 1
+seg N1 M 1
+seg N3 O 1
+seg N4 O 1
+seg PER O 1
+end
+loop 1000B 1
+seg N1 M 1
+seg N3 O 1
+seg N4 O 1
+end
+loop 2000 >1
+seg LX M 1
+seg TS3 O 1
+loop 2100 >1
+seg CLP M 1
+seg CAS O 99
+seg NM1 O 1
+seg DTM O 1
+seg AMT O 20
+loop 2110 999
+seg SVC M 1
+seg DTM O 1
+seg CAS O 99
+seg AMT O 20
+end
+end
+end
+seg PLB O 1
+seg SE M 1

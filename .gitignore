@@ -1,0 +1,23 @@
+# Dependencies (build tooling only; app itself is dependency-free)
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Secrets / credentials
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+credentials.json
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Windows / OneDrive
+Thumbs.db
+desktop.ini
+~$*

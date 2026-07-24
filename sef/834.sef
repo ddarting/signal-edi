@@ -1,0 +1,313 @@
+.SEF 1.6
+; Signal EDI simplified reference profile — not an exhaustive TR3 implementation guide.
+.STD
+X12|005010X220A1|834|Benefit Enrollment
+.ELMS
+1035=AN,1,60
+1036=AN,1,35
+1037=AN,1,25
+1038=AN,1,10
+1039=AN,1,10
+1065=ID,1,1
+1068=ID,1,1
+1069=AN,1,12
+1073=ID,1,1
+1146=AN,0,0
+116=ID,3,15
+1203=ID,1,2
+1204=ID,2,2
+1205=AN,0,0
+1216=ID,1,1
+1219=ID,1,1
+124=AN,2,15
+1250=ID,2,3
+1251=AN,1,35
+127=AN,1,50
+128=ID,2,3
+1390=ID,1,2
+142=AN,2,15
+143=ID,3,3
+156=ID,2,2
+166=AN,1,55
+1705=AN,1,35
+19=AN,2,30
+26=ID,2,3
+28=N0,1,9
+306=ID,2,2
+329=AN,4,9
+337=TM,4,8
+352=AN,1,264
+353=ID,2,2
+364=AN,1,256
+365=ID,2,2
+366=AN,0,0
+373=DT,8,8
+374=ID,3,3
+455=ID,1,2
+479=ID,2,2
+480=AN,1,12
+522=ID,1,2
+554=AN,0,0
+584=ID,1,2
+609=N0,1,3
+623=AN,0,0
+640=ID,2,2
+66=ID,1,2
+67=AN,2,80
+782=R,1,18
+875=ID,3,3
+93=AN,0,0
+96=N0,1,10
+97=N0,1,6
+98=ID,2,3
+I01=ID,2,2
+I02=AN,10,10
+I03=ID,2,2
+I04=AN,10,10
+I05=ID,2,2
+I06=AN,15,15
+I07=AN,15,15
+I08=DT,6,6
+I09=TM,4,4
+I10=AN,1,1
+I11=ID,5,5
+I12=N0,9,9
+I13=ID,1,1
+I14=ID,1,1
+I15=AN,1,1
+I16=N0,1,5
+.CODES
+1065=1,2
+1068=M,F,U
+1073=Y,N,W,U
+1250=D8,RD8,DT
+143=837,835,834,270,271,276,277,278,820,999,997
+353=00,18,CH,RP
+374=434,435,472,096,090,091,150,151
+455=X
+66=XX,MI,PI,46,FI,24,34
+875=001,021,024,025,030
+98=41,40,85,87,IL,QC,PR,82,77,DN,DK,31,P5,IN,36
+I05=ZZ,01,14,20,27,28,30,33
+I14=P,T,I
+.CODETEXT
+1065,1=Person
+1065,2=Non-Person Entity
+1068,M=Male
+1068,F=Female
+1068,U=Unknown
+1073,Y=Yes
+1073,N=No
+1073,W=Not Applicable
+1073,U=Unknown
+1250,D8=Date Expressed in CCYYMMDD Format
+1250,RD8=Range of Dates CCYYMMDD-CCYYMMDD
+1250,DT=Date and Time
+143,837=Health Care Claim
+143,835=Claim Payment/Advice
+143,834=Benefit Enrollment
+143,270=Eligibility Inquiry
+143,271=Eligibility Response
+143,276=Claim Status Request
+143,277=Claim Status Response
+143,278=Services Review
+143,820=Premium Payment
+143,999=Implementation Acknowledgment
+143,997=Functional Acknowledgment
+353,00=Original
+353,18=Reissue
+353,CH=Chargeable
+353,RP=Repriced
+374,434=Statement
+374,435=Admission
+374,472=Service
+374,096=Discharge
+374,090=Report Start
+374,091=Report End
+374,150=Service Period Start
+374,151=Service Period End
+455,X=Accredited Standards Committee X12
+66,XX=NPI (Centers for Medicare and Medicaid Services National Provider Identifier)
+66,MI=Member Identification Number
+66,PI=Payor Identification
+66,46=Electronic Transmitter Identification Number
+66,FI=Federal Taxpayer Identification Number
+66,24=Employer Identification Number
+66,34=Social Security Number
+875,001=Change (Update)
+875,021=Addition
+875,024=Cancellation or Termination
+875,025=Reinstatement
+875,030=Audit or Compare
+98,41=Submitter
+98,40=Receiver
+98,85=Billing Provider
+98,87=Pay-to Provider
+98,IL=Insured or Subscriber
+98,QC=Patient
+98,PR=Payer
+98,82=Rendering Provider
+98,77=Service Location
+98,DN=Referring Provider
+98,DK=Ordering Provider
+98,31=Postal Mailing Address
+98,P5=Plan Sponsor
+98,IN=Insurer
+98,36=Employer
+I05,ZZ=Mutually Defined
+I05,01=Duns (Dun & Bradstreet)
+I05,14=Duns Plus Suffix
+I05,20=Health Industry Number
+I05,27=Carrier Identification Number
+I05,28=Fiscal Intermediary Identification Number
+I05,30=U.S. Federal Tax Identification Number
+I05,33=NAIC Company Code
+I14,P=Production Data
+I14,T=Test Data
+I14,I=Information
+.SEGS
+ISA=I01,M,1,I02,O,1,I03,M,1,I04,O,1,I05,M,1,I06,M,1,I05,M,1,I07,M,1,I08,M,1,I09,M,1,I10,M,1,I11,M,1,I12,M,1,I13,M,1,I14,M,1,I15,M,1
+GS=479,M,1,142,M,1,124,M,1,373,M,1,337,M,1,28,M,1,455,M,1,480,M,1
+GE=97,M,1,28,M,1
+IEA=I16,M,1,I12,M,1
+ST=143,M,1,329,M,1,1705,O,1
+SE=96,M,1,329,M,1
+BGN=353,M,1,127,M,1,373,M,1,337,O,1,623,O,1,127,O,1,640,O,1,306,O,1
+REF=128,M,1,127,O,1,352,O,1
+DTP=374,M,1,1250,M,1,1251,M,1
+N1=98,M,1,93,O,1,66,O,1,67,O,1
+INS=1073,M,1,1069,M,1,875,M,1,1203,O,1,1216,O,1,1219,O,1,584,O,1
+NM1=98,M,1,1065,M,1,1035,O,1,1036,O,1,1037,O,1,1038,O,1,1039,O,1,66,O,1,67,O,1
+PER=366,O,1,93,O,1,365,O,1,364,O,1,365,O,1,364,O,1
+N3=166,M,1,166,O,1
+N4=19,O,1,156,O,1,116,O,1,26,O,1
+DMG=1250,O,1,1251,O,1,1068,O,1
+HD=875,M,1,1203,O,1,1204,M,1,1205,O,1,1390,O,1
+DSB=1146,M,1,609,O,1
+AMT=522,M,1,782,M,1
+LX=554,M,1
+.SEGTEXT
+ISA=Interchange Control Header
+GS=Functional Group Header
+GE=Functional Group Trailer
+IEA=Interchange Control Trailer
+ST=Transaction Set Header
+SE=Transaction Set Trailer
+BGN=Beginning Segment
+REF=Reference Information
+DTP=Date or Time or Period
+N1=Party Identification
+INS=Member Level Detail
+NM1=Individual or Organizational Name
+PER=Administrative Communications Contact
+N3=Party Location (Address)
+N4=Geographic Location
+DMG=Demographic Information
+HD=Health Coverage
+DSB=Disability Information
+AMT=Monetary Amount Information
+LX=Service Line Number
+.ELETEXT
+1035=Name Last or Organization Name
+1036=Name First
+1037=Name Middle
+1038=Name Prefix
+1039=Name Suffix
+1065=Entity Type Qualifier
+1068=Gender Code
+1069=Hierarchical ID Number
+1073=Yes/No Condition or Response Code
+1146=Data Element 1146
+116=Postal Code
+1203=Maintenance Reason Code
+1204=Plan Coverage Description
+1205=Data Element 1205
+1216=Benefit Status Code
+1219=Employment Status
+124=Application Receiver's Code
+1250=Date Time Period Format Qualifier
+1251=Date Time Period
+127=Reference Identification
+128=Reference Identification Qualifier
+1390=Coverage Level Code
+142=Application Sender's Code
+143=Transaction Set Identifier Code
+156=State or Province Code
+166=Address Information
+1705=Implementation Convention Reference
+19=City Name
+26=Country Code
+28=Group Control Number
+306=Action Code
+329=Transaction Set Control Number
+337=Time
+352=Description
+353=Transaction Set Purpose Code
+364=Communication Number
+365=Communication Number Qualifier
+366=Data Element 366
+373=Date
+374=Date/Time Qualifier
+455=Responsible Agency Code
+479=Functional Identifier Code
+480=Version / Release / Industry Identifier Code
+522=Amount Qualifier Code
+554=Data Element 554
+584=Employment Status Code
+609=Count
+623=Data Element 623
+640=Transaction Type Code
+66=Identification Code Qualifier
+67=Identification Code
+782=Monetary Amount
+875=Maintenance Type Code
+93=Data Element 93
+96=Number of Included Segments
+97=Number of Transaction Sets Included
+98=Entity Identifier Code
+I01=Authorization Information Qualifier
+I02=Authorization Information
+I03=Security Information Qualifier
+I04=Security Information
+I05=Interchange ID Qualifier
+I06=Interchange Sender / Receiver ID
+I07=Interchange Receiver ID
+I08=Interchange Date
+I09=Interchange Time
+I10=Repetition Separator
+I11=Interchange Control Version Number
+I12=Interchange Control Number
+I13=Acknowledgment Requested
+I14=Interchange Usage Indicator
+I15=Component Element Separator
+I16=Number of Included Functional Groups
+.SETS
+834=Benefit Enrollment and Maintenance
+seg ST M 1
+seg BGN M 1
+seg REF O 1
+seg DTP O 1
+loop 1000A 1
+seg N1 M 1
+end
+loop 1000B 1
+seg N1 M 1
+end
+loop 2000 >1
+seg INS M 1
+seg REF O 1
+seg DTP O 24
+loop 2100A 1
+seg NM1 M 1
+seg PER O 1
+seg N3 O 1
+seg N4 O 1
+seg DMG O 1
+end
+loop 2300 99
+seg HD O 1
+seg DTP O 24
+seg AMT O 1
+end
+end
+seg SE M 1
