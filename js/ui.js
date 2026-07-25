@@ -384,8 +384,8 @@
   }
   function td(cls, text) { const d = document.createElement('td'); if (cls) d.className = cls; d.textContent = text == null ? '' : text; return d; }
 
-  // ---- Diagnostics list ------------------------------------------------------
-  function renderDiagnostics(container, result, onGoto) {
+  // ---- Diagnostics (hierarchical: scope › segment › findings) ---------------
+  function renderDiagnostics(container, result, onGoto, sef) {
     container.innerHTML = '';
     const state = { error: true, warning: true, info: true };
     const filters = h('div', 'diag-filters');
@@ -395,24 +395,100 @@
       chip.addEventListener('click', function () { state[f[0]] = !state[f[0]]; chip.classList.toggle('on', state[f[0]]); draw(); });
       filters.appendChild(chip);
     });
+    // expand / collapse all
+    const spacer = h('span', null, ''); spacer.style.flex = '1'; filters.appendChild(spacer);
+    const exp = h('div', 'chip', 'Expand all'); exp.addEventListener('click', function () { setAll(false); });
+    const col = h('div', 'chip', 'Collapse all'); col.addEventListener('click', function () { setAll(true); });
+    filters.appendChild(exp); filters.appendChild(col);
     container.appendChild(filters);
-    const listWrap = h('div');
+
+    const listWrap = h('div', 'diag-tree');
     container.appendChild(listWrap);
+
+    function setAll(collapsed) {
+      listWrap.querySelectorAll('.grp-body').forEach(function (b) { b.style.display = collapsed ? 'none' : ''; });
+      listWrap.querySelectorAll('.grp-head .gtw').forEach(function (t) { t.textContent = collapsed ? '▸' : '▾'; });
+    }
 
     function draw() {
       listWrap.innerHTML = '';
-      const order = { error: 0, warning: 1, info: 2 };
-      const items = result.diagnostics.filter(function (d) { return state[d.severity]; })
-        .sort(function (a, b) { return order[a.severity] - order[b.severity] || a.segIndex - b.segIndex; });
+      const items = result.diagnostics.filter(function (d) { return state[d.severity]; });
       if (items.length === 0) {
         const clean = h('div', 'clean');
         clean.appendChild(h('div', 'big', '✓'));
         clean.appendChild(h('div', null, result.diagnostics.length === 0 ? 'No issues found against the active profile.' : 'No findings match the current filters.'));
         listWrap.appendChild(clean); return;
       }
-      items.forEach(function (d) { listWrap.appendChild(diagCard(d, onGoto)); });
+      // group by scope (path) in document order, then by segment
+      const scopes = [], sMap = {};
+      items.forEach(function (d) {
+        const key = d.path || 'Interchange';
+        let sc = sMap[key];
+        if (!sc) { sc = sMap[key] = { key: key, segs: [], segMap: {}, counts: { error: 0, warning: 0, info: 0 } }; scopes.push(sc); }
+        sc.counts[d.severity]++;
+        const sk = (d.segId || '?') + '#' + d.segIndex;
+        let sg = sc.segMap[sk];
+        if (!sg) { sg = sc.segMap[sk] = { segId: d.segId, segIndex: d.segIndex, items: [], counts: { error: 0, warning: 0, info: 0 } }; sc.segs.push(sg); }
+        sg.items.push(d); sg.counts[d.severity]++;
+      });
+      scopes.forEach(function (sc) { listWrap.appendChild(scopeGroup(sc, onGoto, sef)); });
     }
     draw();
+  }
+
+  function countPills(counts) {
+    const w = h('span', 'grp-counts');
+    [['error', counts.error], ['warning', counts.warning], ['info', counts.info]].forEach(function (c) {
+      if (c[1]) { const p = h('span', 'gc ' + c[0]); p.textContent = c[1]; w.appendChild(p); }
+    });
+    return w;
+  }
+
+  function collapsible(headEl, bodyEl) {
+    const tw = h('span', 'gtw', '▾');
+    headEl.insertBefore(tw, headEl.firstChild);
+    headEl.addEventListener('click', function (e) {
+      if (e.target.closest('.jump')) return;
+      const open = bodyEl.style.display !== 'none';
+      bodyEl.style.display = open ? 'none' : '';
+      tw.textContent = open ? '▸' : '▾';
+    });
+  }
+
+  function scopeGroup(sc, onGoto, sef) {
+    const wrap = h('div', 'diag-scope');
+    const head = h('div', 'grp-head scope-head');
+    head.appendChild(h('span', 'scope-name', sc.key));
+    const sp = h('span', null, ''); sp.style.flex = '1'; head.appendChild(sp);
+    head.appendChild(countPills(sc.counts));
+    const body = h('div', 'grp-body');
+    sc.segs.forEach(function (sg) { body.appendChild(segGroup(sg, onGoto, sef)); });
+    collapsible(head, body);
+    wrap.appendChild(head); wrap.appendChild(body);
+    return wrap;
+  }
+
+  function segGroup(sg, onGoto, sef) {
+    const wrap = h('div', 'diag-seg');
+    const head = h('div', 'grp-head seg-head');
+    const worst = sg.counts.error ? 'error' : sg.counts.warning ? 'warning' : 'info';
+    head.appendChild(h('span', 'dotmark ' + worst));
+    head.appendChild(h('span', 'seg-id', sg.segId || '—'));
+    const def = sef && sef.segments[sg.segId];
+    if (def && def.name) head.appendChild(h('span', 'seg-nm', def.name));
+    if (sg.segIndex >= 0) {
+      const jump = h('span', 'jump', '#' + (sg.segIndex + 1));
+      jump.title = 'Open in inspector';
+      if (onGoto) jump.addEventListener('click', function (e) { e.stopPropagation(); onGoto(sg.segIndex); });
+      head.appendChild(jump);
+    }
+    const sp = h('span', null, ''); sp.style.flex = '1'; head.appendChild(sp);
+    head.appendChild(countPills(sg.counts));
+    const body = h('div', 'grp-body seg-body');
+    sg.items.forEach(function (d) { body.appendChild(diagCard(d, onGoto)); });
+    collapsible(head, body);
+    wrap.appendChild(head); wrap.appendChild(body);
+    return wrap;
   }
 
   function diagCard(d, onGoto) {

@@ -215,7 +215,7 @@
     const c = els.tabcontent;
     if (activeTab === 'overview') UI.renderOverview(c, state.parsed, state.sef, state.result, gotoSegment);
     else if (activeTab === 'inspector') UI.renderInspector(c, state.selected, state.sef);
-    else if (activeTab === 'validation') UI.renderDiagnostics(c, state.result, gotoSegment);
+    else if (activeTab === 'validation') UI.renderDiagnostics(c, state.result, gotoSegment, state.sef);
     else if (activeTab === 'raw') UI.renderRaw(c, state.parsed);
   }
 
