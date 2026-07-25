@@ -16,8 +16,8 @@
     <div class="brand">
       <span class="mark">◢</span>
       <h1>Signal EDI</h1>
-      <span class="sub">HIPAA X12 Diagnostic Console</span>
     </div>
+    <div class="page-title" id="pageTitle">System Overview</div>
     <div class="spacer"></div>
     <div class="control">
       <label>Profile</label>
@@ -28,10 +28,13 @@
       <button id="loadSefBtn" class="btn" title="Load a third-party .sef file">Load SEF…</button>
       <button id="sampleBtn" class="btn">Sample</button>
       <button id="openEdiBtn" class="btn primary">Open EDI file</button>
-      <button id="settingsBtn" class="btn icon-btn" title="Settings">⚙</button>
     </div>
-    <div class="phi" title="All parsing happens in your browser. No file contents are uploaded.">
-      <span class="dot"></span> Local only · PHI never leaves this machine
+    <div class="topbar-r">
+      <span id="alertsPill" class="alerts-pill ok" title="Validation findings">● 0 ALERTS</span>
+      <button id="settingsBtn" class="btn icon-btn" title="Settings">⚙</button>
+      <span class="phi" title="All parsing happens in your browser. No file contents are uploaded.">
+        <span class="dot"></span> Local only
+      </span>
     </div>
     <input type="file" id="ediFile" class="hidden" accept=".edi,.txt,.x12,.837,.835,.834,.270,.271,.276,.277,.278,.820,.999,.dat,*">
     <input type="file" id="sefFile" class="hidden" accept=".sef">
@@ -42,6 +45,8 @@
       <div class="side-head"><span id="sidebarTitle">Structure</span><span>ISA · GS · ST</span></div>
       <div id="tree" class="tree"></div>
     </aside>
+
+    <aside class="statcol hidden" id="statcol"></aside>
 
     <section class="main hidden" id="main">
       <div class="tabbar" id="tabbar">

@@ -4,7 +4,7 @@
 
   const KEY = 'signalEdiSettings';
   const DEFAULTS = {
-    theme: 'auto',          // auto | dark | light
+    theme: 'light',         // auto | dark | light (light matches the Weka console)
     scale: '100',           // UI zoom percent
     scanlines: true,        // CRT scanline overlay
     pixelGrid: true,        // faint pixel grid background

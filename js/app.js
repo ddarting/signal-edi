@@ -22,6 +22,9 @@
     els.main = $('main');
     els.profileSelect = $('profileSelect');
     els.sidebarTitle = $('sidebarTitle');
+    els.statcol = $('statcol');
+    els.pageTitle = $('pageTitle');
+    els.alertsPill = $('alertsPill');
 
     // Settings (restores last profile before the dropdown is built)
     if (window.Settings) {
@@ -122,6 +125,7 @@
     }
     els.empty.classList.add('hidden');
     els.main.classList.remove('hidden');
+    if (els.statcol) els.statcol.classList.remove('hidden');
     els.sidebarTitle.textContent = name || 'Interchange';
     applyProfile(true);
     rerun();
@@ -172,6 +176,7 @@
     const vopts = window.Settings ? Settings.validationOptions() : undefined;
     state.result = Validator.validate(state.parsed, state.sef, vopts);
     UI.renderTree(els.tree, state.parsed, state.sef, selectSegment);
+    if (els.statcol) UI.renderStatColumn(els.statcol, state.parsed, state.sef, state.result);
     updateBadges();
     renderActiveTab();
   }
@@ -180,6 +185,12 @@
     const eb = $('badge-validation-error'), wb = $('badge-validation-warn');
     if (eb) { eb.textContent = state.result.summary.error; eb.classList.toggle('hidden', !state.result.summary.error); }
     if (wb) { wb.textContent = state.result.summary.warning; wb.classList.toggle('hidden', !state.result.summary.warning); }
+    // topbar alerts pill
+    if (els.alertsPill) {
+      const e = state.result.summary.error, w = state.result.summary.warning;
+      els.alertsPill.className = 'alerts-pill ' + (e ? 'crit' : w ? 'warn' : 'ok');
+      els.alertsPill.textContent = '● ' + (e ? e + ' ERROR' + (e > 1 ? 'S' : '') : w ? w + ' WARNING' + (w > 1 ? 'S' : '') : '0 ALERTS');
+    }
     // profile note in auto mode
     const note = $('profileNote');
     if (note) {
@@ -189,12 +200,14 @@
   }
 
   // ---- tabs ----
+  const TITLES = { overview: 'System Overview', inspector: 'Segment Inspector', validation: 'Validation', raw: 'Raw Data' };
   let activeTab = 'overview';
   function setActiveTab(id) {
     activeTab = id;
     Array.prototype.forEach.call(els.tabbar.querySelectorAll('.tab'), function (t) {
       t.classList.toggle('active', t.dataset.tab === id);
     });
+    if (els.pageTitle) els.pageTitle.textContent = TITLES[id] || 'Overview';
     renderActiveTab();
   }
   function renderActiveTab() {

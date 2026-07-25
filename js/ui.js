@@ -2,13 +2,18 @@
 (function (global) {
   'use strict';
 
+  const NS = 'http://www.w3.org/2000/svg';
   function h(tag, cls, text) {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
     if (text != null) e.textContent = text;
     return e;
   }
-  function esc(s) { return (s == null ? '' : String(s)).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
+  function svgEl(tag, attrs) {
+    const e = document.createElementNS(NS, tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    return e;
+  }
 
   function sevRank(seg) {
     if (!seg.diagnostics) return null;
@@ -85,10 +90,8 @@
     row.appendChild(tw);
     row.appendChild(h('span', 'loop', 'ST ' + t.setId));
     row.appendChild(h('span', 'desc', X12.SET_NAMES[t.setId] ? X12.SET_NAMES[t.setId].replace(/\s*\(.*\)$/, '') : t.name));
-    const sr = worstOf(t.st.diagnostics);
     row.addEventListener('click', function () { onSelect(t.st, row); toggle(); });
     const kids = h('div', 'children');
-    // body segments (skip the ST itself which is header)
     t.segments.forEach(function (s) { if (s === t.st) return; kids.appendChild(segRow(s, sef, onSelect)); });
     node.appendChild(row); node.appendChild(kids);
     function toggle() { const open = kids.style.display !== 'none'; kids.style.display = open ? 'none' : ''; tw.textContent = open ? '▸' : '▾'; }
@@ -102,123 +105,6 @@
     return null;
   }
 
-  // ---- Overview (Weka-style dashboard) --------------------------------------
-  function renderOverview(container, parsed, sef, result, onGoto) {
-    container.innerHTML = '';
-    const s = parsed.stats;
-    const ich = parsed.interchanges[0];
-    const total = result.summary.error + result.summary.warning + result.summary.info;
-    const healthy = result.summary.error === 0 && result.summary.warning === 0;
-
-    // status banner (cluster header)
-    const banner = h('div', 'wk-banner ' + (result.summary.error ? 'crit' : result.summary.warning ? 'warn' : 'ok'));
-    const bl = h('div', 'wk-banner-l');
-    bl.appendChild(h('span', 'wk-status-dot'));
-    const bt = h('div');
-    bt.appendChild(h('div', 'wk-banner-title', ich ? (ich.senderId + ' → ' + ich.receiverId) : 'Interchange'));
-    bt.appendChild(h('div', 'wk-banner-sub', (ich ? (X12.SET_NAMES[firstSetId(parsed)] || '') : '') + (ich ? '  ·  ISA ' + ich.controlNumber : '')));
-    bl.appendChild(bt);
-    banner.appendChild(bl);
-    const br = h('div', 'wk-banner-r');
-    br.appendChild(h('span', 'wk-pill ' + (result.summary.error ? 'crit' : result.summary.warning ? 'warn' : 'ok'),
-      result.summary.error ? result.summary.error + ' ERRORS' : result.summary.warning ? result.summary.warning + ' WARNINGS' : 'VALIDATED'));
-    if (ich) br.appendChild(h('span', 'wk-pill ' + (ich.usageIndicator === 'P' ? 'ok' : 'warn'), ich.usageIndicator === 'P' ? 'PRODUCTION' : ich.usageIndicator === 'T' ? 'TEST' : ich.usageIndicator));
-    if (sef) br.appendChild(h('span', 'wk-pill', sef.std.version || sef.source));
-    banner.appendChild(br);
-    container.appendChild(banner);
-
-    // hero row: health ring | HUD readouts | topology ring
-    const hero = h('div', 'wk-hero');
-
-    // 1. health ring (capacity-style)
-    const healthBox = h('div', 'wk-tile');
-    healthBox.appendChild(h('div', 'wk-tile-h', 'Validation Health'));
-    healthBox.appendChild(gauge(result.summary, healthy));
-    hero.appendChild(healthBox);
-
-    // 2. HUD readouts
-    const hud = h('div', 'wk-tile wk-hud');
-    hud.appendChild(h('div', 'wk-tile-h', 'Throughput'));
-    hud.appendChild(readout(s.transactionCount, 'Transaction Sets', 'txn'));
-    hud.appendChild(readout(s.segmentTotal, 'Segments', 'seg'));
-    hud.appendChild(readout(sef ? countValidated(parsed) : s.groupCount, sef ? 'Elements Checked' : 'Functional Groups', sef ? 'el' : 'grp'));
-    hero.appendChild(hud);
-
-    // 3. topology ring
-    const topo = h('div', 'wk-tile');
-    topo.appendChild(h('div', 'wk-tile-h', 'Segment Topology'));
-    topo.appendChild(topologyRing(parsed, onGoto));
-    hero.appendChild(topo);
-
-    container.appendChild(hero);
-
-    // coverage bar + alerts
-    const midGrid = h('div', 'wk-grid');
-
-    const cov = h('div', 'wk-tile');
-    cov.appendChild(h('div', 'wk-tile-h', 'Profile Coverage'));
-    cov.appendChild(coverage(parsed, sef));
-    // transaction distribution below coverage
-    cov.appendChild(h('div', 'wk-sub-h', 'Transaction Set Distribution'));
-    const setEntries = Object.keys(s.setCounts).map(function (k) { return [k, s.setCounts[k]]; }).sort(function (a, b) { return b[1] - a[1]; });
-    cov.appendChild(barChart(setEntries.map(function (e) {
-      return { label: (X12.SET_NAMES[e[0]] || ('Set ' + e[0])).replace(/^(.*?)\s*\((\w+)\)$/, '$2 · $1'), value: e[1] };
-    })));
-    midGrid.appendChild(cov);
-
-    // alerts / events feed
-    const alerts = h('div', 'wk-tile');
-    const ah = h('div', 'wk-tile-h wk-tile-h-row');
-    ah.appendChild(h('span', null, 'Alerts & Events'));
-    ah.appendChild(h('span', 'wk-count', String(total)));
-    alerts.appendChild(ah);
-    alerts.appendChild(alertsFeed(result, onGoto));
-    midGrid.appendChild(alerts);
-
-    container.appendChild(midGrid);
-
-    // envelope + profile + segment frequency
-    const grid2 = h('div', 'wk-grid');
-    if (ich) {
-      const envBox = h('div', 'wk-tile');
-      envBox.appendChild(h('div', 'wk-tile-h', 'Interchange Envelope'));
-      const kv = h('div', 'kv');
-      addKV(kv, 'Sender', ich.senderQual + ':' + ich.senderId);
-      addKV(kv, 'Receiver', ich.receiverQual + ':' + ich.receiverId);
-      addKV(kv, 'Date / Time', ich.date + ' ' + ich.time);
-      addKV(kv, 'Control #', ich.controlNumber);
-      addKV(kv, 'Version', ich.version);
-      envBox.appendChild(kv);
-      grid2.appendChild(envBox);
-    }
-    const profBox = h('div', 'wk-tile');
-    profBox.appendChild(h('div', 'wk-tile-h', 'Active SEF Profile'));
-    const pkv = h('div', 'kv');
-    if (sef) {
-      addKV(pkv, 'Name', sef.std.name || sef.source);
-      addKV(pkv, 'Agency / Ver', (sef.std.agency || 'X12') + ' ' + (sef.std.version || ''));
-      addKV(pkv, 'Segments', sef.counts.segments + ' defined');
-      addKV(pkv, 'Elements', sef.counts.elements + ' defined');
-      addKV(pkv, 'Code lists', countCodeLists(sef));
-      addKV(pkv, 'Structures', sef.counts.sets);
-    } else {
-      addKV(pkv, 'Name', 'None — structural parse only');
-      addKV(pkv, 'Tip', 'Pick a profile or load a .sef file to enable validation.');
-    }
-    profBox.appendChild(pkv);
-    grid2.appendChild(profBox);
-    container.appendChild(grid2);
-
-    const segBox = h('div', 'wk-tile');
-    segBox.appendChild(h('div', 'wk-tile-h', 'Segment Frequency'));
-    const segEntries = Object.keys(s.segmentCounts).map(function (k) { return [k, s.segmentCounts[k]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 18);
-    segBox.appendChild(barChart(segEntries.map(function (e) {
-      const def = sef && sef.segments[e[0]];
-      return { label: e[0] + (def && def.name ? ' · ' + def.name : ''), value: e[1] };
-    })));
-    container.appendChild(segBox);
-  }
-
   function firstSetId(parsed) {
     for (const ich of parsed.interchanges) for (const g of ich.groups) for (const t of g.transactions) return t.setId;
     return '';
@@ -227,120 +113,200 @@
     let n = 0; parsed.segments.forEach(function (s) { if (s.def) n += s.elements.length; }); return n;
   }
 
-  // big capacity-style gauge (conic ring, status in center)
-  function gauge(summary, healthy) {
-    const total = summary.error + summary.warning + summary.info;
-    const wrap = h('div', 'wk-gauge-wrap');
-    const g = h('div', 'wk-gauge');
-    if (total === 0) g.style.background = 'conic-gradient(var(--ok) 0 100%)';
-    else {
-      const e = summary.error / total * 100, w = summary.warning / total * 100;
-      g.style.background = 'conic-gradient(var(--error) 0 ' + e + '%, var(--warning) ' + e + '% ' + (e + w) + '%, var(--info) ' + (e + w) + '% 100%)';
-    }
-    const c = h('div', 'wk-gauge-c');
-    c.appendChild(h('b', healthy ? 'ok' : 'bad', healthy ? '✓' : String(total)));
-    c.appendChild(h('span', null, healthy ? 'HEALTHY' : 'FINDINGS'));
-    g.appendChild(c); wrap.appendChild(g);
-    const legend = h('div', 'legend');
-    [['Errors', summary.error, 'var(--error)'], ['Warnings', summary.warning, 'var(--warning)'], ['Info', summary.info, 'var(--info)']].forEach(function (l) {
-      const li = h('div', 'li'); const sw = h('span', 'sw'); sw.style.background = l[2]; li.appendChild(sw); li.appendChild(h('span', null, l[0] + ' · ' + l[1])); legend.appendChild(li);
+  // ---- Overview: isometric cluster canvas (Weka-style) -----------------------
+  function renderOverview(container, parsed, sef, result, onGoto) {
+    container.innerHTML = '';
+    const s = parsed.stats;
+
+    const canvas = h('div', 'iso-canvas');
+    canvas.appendChild(isoDiagram(parsed, onGoto));
+    const legend = h('div', 'iso-legend');
+    [['valid', 'Valid'], ['warning', 'Warning'], ['error', 'Error'], ['hub', 'Interchange']].forEach(function (l) {
+      const li = h('span', 'iso-leg'); li.appendChild(h('span', 'iso-sw ' + l[0])); li.appendChild(document.createTextNode(l[1])); legend.appendChild(li);
     });
-    wrap.appendChild(legend);
-    return wrap;
+    canvas.appendChild(legend);
+    container.appendChild(canvas);
+
+    const charts = h('div', 'ov-charts');
+    const c1 = h('div', 'panel-box');
+    c1.appendChild(h('h3', null, 'Transaction Set Distribution'));
+    const setEntries = Object.keys(s.setCounts).map(function (k) { return [k, s.setCounts[k]]; }).sort(function (a, b) { return b[1] - a[1]; });
+    c1.appendChild(barChart(setEntries.map(function (e) {
+      return { label: (X12.SET_NAMES[e[0]] || ('Set ' + e[0])).replace(/^(.*?)\s*\((\w+)\)$/, '$2 · $1'), value: e[1] };
+    })));
+    const c2 = h('div', 'panel-box');
+    c2.appendChild(h('h3', null, 'Segment Frequency'));
+    const segEntries = Object.keys(s.segmentCounts).map(function (k) { return [k, s.segmentCounts[k]]; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 12);
+    c2.appendChild(barChart(segEntries.map(function (e) {
+      const def = sef && sef.segments[e[0]];
+      return { label: e[0] + (def && def.name ? ' · ' + def.name : ''), value: e[1] };
+    })));
+    charts.appendChild(c1); charts.appendChild(c2);
+    container.appendChild(charts);
   }
 
-  // big performance readout (number + unit + label + mini bar)
-  function readout(value, label, unit) {
-    const r = h('div', 'wk-readout');
-    const top = h('div', 'wk-readout-v');
-    top.appendChild(h('span', 'wk-num', formatNum(value)));
-    top.appendChild(h('span', 'wk-unit', unit));
-    r.appendChild(top);
-    r.appendChild(h('div', 'wk-readout-l', label));
-    return r;
-  }
-  function formatNum(n) { return n >= 100000 ? (n / 1000).toFixed(1) + 'k' : String(n); }
-
-  // signature ring of dots — one per segment, colored by severity
-  function topologyRing(parsed, onGoto) {
-    const NS = 'http://www.w3.org/2000/svg';
+  // isometric cube cluster: hub (interchange) + one cube per segment
+  function isoDiagram(parsed, onGoto) {
     const segs = parsed.segments;
-    const cap = 96;
+    const cap = 48;
     const shown = segs.slice(0, cap);
-    const size = 210, C = size / 2, R = size / 2 - 14;
-    const svg = document.createElementNS(NS, 'svg');
-    svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size); svg.setAttribute('class', 'wk-topo');
-    // spokes + outer ring
-    const ring = document.createElementNS(NS, 'circle');
-    ring.setAttribute('cx', C); ring.setAttribute('cy', C); ring.setAttribute('r', R); ring.setAttribute('class', 'wk-topo-ring');
-    svg.appendChild(ring);
-    const n = shown.length || 1;
-    shown.forEach(function (seg, i) {
-      const a = (i / n) * Math.PI * 2 - Math.PI / 2;
-      const x = C + R * Math.cos(a), y = C + R * Math.sin(a);
-      const sev = worstOf(seg.diagnostics);
-      const spoke = document.createElementNS(NS, 'line');
-      spoke.setAttribute('x1', C); spoke.setAttribute('y1', C); spoke.setAttribute('x2', x); spoke.setAttribute('y2', y);
-      spoke.setAttribute('class', 'wk-spoke'); svg.appendChild(spoke);
-      const dot = document.createElementNS(NS, 'circle');
-      dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('r', sev ? 5.5 : 4);
-      dot.setAttribute('class', 'wk-node ' + (sev || 'clean'));
-      const title = document.createElementNS(NS, 'title'); title.textContent = seg.id + ' #' + (seg.index + 1) + (sev ? ' — ' + sev : '');
-      dot.appendChild(title);
-      if (onGoto) { dot.style.cursor = 'pointer'; dot.addEventListener('click', function () { onGoto(seg.index); }); }
-      svg.appendChild(dot);
+    const W = 900, H = 470;
+    const svg = svgEl('svg', { class: 'iso', viewBox: '0 0 ' + W + ' ' + H, preserveAspectRatio: 'xMidYMid meet' });
+
+    const size = shown.length > 30 ? 22 : 27;
+    const hw = size, qh = size * 0.5;
+    const cols = Math.max(1, Math.ceil(Math.sqrt(shown.length)));
+    const originX = W * 0.60, originY = H * 0.24;
+    const hubX = W * 0.17, hubY = H * 0.44, hubS = size * 1.25;
+
+    // connector from hub to cluster
+    svg.appendChild(svgEl('line', { x1: hubX, y1: hubY + hubS, x2: originX, y2: originY + qh * 2, class: 'iso-link' }));
+
+    isoCube(svg, hubX, hubY, hubS, { hub: true, title: 'Interchange (ISA) — ' + (parsed.interchanges[0] ? parsed.interchanges[0].controlNumber : '') });
+
+    const cells = shown.map(function (seg, i) { return { seg: seg, col: i % cols, row: Math.floor(i / cols) }; });
+    cells.sort(function (a, b) { return (a.col + a.row) - (b.col + b.row); });
+    cells.forEach(function (c) {
+      const x = originX + (c.col - c.row) * hw;
+      const y = originY + (c.col + c.row) * qh;
+      isoCube(svg, x, y, size, { sev: worstOf(c.seg.diagnostics), title: c.seg.id + ' #' + (c.seg.index + 1), index: c.seg.index }, onGoto);
     });
-    const wrap = h('div', 'wk-topo-wrap');
+
+    const wrap = h('div', 'iso-wrap');
     wrap.appendChild(svg);
-    const center = h('div', 'wk-topo-center');
-    center.appendChild(h('b', null, String(segs.length)));
-    center.appendChild(h('span', null, 'SEGMENTS'));
-    wrap.appendChild(center);
-    if (segs.length > cap) wrap.appendChild(h('div', 'wk-topo-more', '+' + (segs.length - cap) + ' more'));
+    if (segs.length > cap) wrap.appendChild(h('div', 'iso-more', '+' + (segs.length - cap) + ' more segments'));
     return wrap;
   }
 
-  // capacity-style coverage bar: defined vs undefined segment types
-  function coverage(parsed, sef) {
-    const wrap = h('div');
-    const ids = Object.keys(parsed.stats.segmentCounts);
-    let defined = 0;
-    if (sef) ids.forEach(function (id) { if (sef.segments[id]) defined++; });
-    const pct = ids.length ? Math.round(defined / ids.length * 100) : 0;
-    const meta = h('div', 'wk-cap-meta');
-    meta.appendChild(h('span', null, sef ? (defined + ' / ' + ids.length + ' segment types in profile') : 'No profile loaded'));
-    meta.appendChild(h('span', 'wk-cap-pct', sef ? pct + '%' : '—'));
-    wrap.appendChild(meta);
-    const track = h('div', 'wk-cap-track');
-    const fill = h('div', 'wk-cap-fill'); fill.style.width = (sef ? pct : 0) + '%';
-    track.appendChild(fill); wrap.appendChild(track);
-    return wrap;
+  function isoCube(svg, x, y, s, opts, onGoto) {
+    const hw = s, qh = s * 0.5, ht = s;
+    const g = svgEl('g', { class: 'iso-cube' });
+    const top = [[x, y], [x + hw, y + qh], [x, y + 2 * qh], [x - hw, y + qh]];
+    const left = [[x - hw, y + qh], [x, y + 2 * qh], [x, y + 2 * qh + ht], [x - hw, y + qh + ht]];
+    const right = [[x, y + 2 * qh], [x + hw, y + qh], [x + hw, y + qh + ht], [x, y + 2 * qh + ht]];
+    const pal = opts.hub
+      ? { t: '#7ed957', l: '#46b45a', r: '#379143' }
+      : { t: '#aadcf0', l: '#79b7d8', r: '#63a3c6' };
+    g.appendChild(poly(left, pal.l));
+    g.appendChild(poly(right, pal.r));
+    g.appendChild(poly(top, pal.t));
+    // status marker on the top face
+    const cx = x, cy = y + qh, m = s * 0.34;
+    const mk = [[cx, cy - m * 0.5], [cx + m, cy], [cx, cy + m * 0.5], [cx - m, cy]];
+    const sevColor = { error: '#e5484d', warning: '#f5a623', info: '#3b82f6' };
+    const markColor = opts.hub ? '#ffffff' : (opts.sev ? sevColor[opts.sev] : '#22c55e');
+    g.appendChild(poly(mk, markColor));
+    const title = svgEl('title'); title.textContent = opts.title + (opts.sev ? ' — ' + opts.sev : ''); g.appendChild(title);
+    if (onGoto && typeof opts.index === 'number') {
+      g.classList.add('clickable');
+      g.addEventListener('click', function () { onGoto(opts.index); });
+    }
+    svg.appendChild(g);
+  }
+  function poly(points, fill) {
+    return svgEl('polygon', { points: points.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' '), fill: fill });
   }
 
-  function alertsFeed(result, onGoto) {
-    const wrap = h('div', 'wk-alerts');
-    const order = { error: 0, warning: 1, info: 2 };
-    const items = result.diagnostics.slice().sort(function (a, b) { return order[a.severity] - order[b.severity] || a.segIndex - b.segIndex; }).slice(0, 7);
-    if (items.length === 0) { const ok = h('div', 'wk-alert ok'); ok.appendChild(h('span', 'wk-alert-ico', '✓')); ok.appendChild(h('span', null, 'No alerts — all checks passed.')); wrap.appendChild(ok); return wrap; }
-    const icons = { error: '✕', warning: '▲', info: 'ⓘ' };
-    items.forEach(function (d) {
-      const a = h('div', 'wk-alert ' + d.severity);
-      a.appendChild(h('span', 'wk-alert-ico', icons[d.severity]));
-      const b = h('div', 'wk-alert-b');
-      b.appendChild(h('div', 'wk-alert-m', d.message));
-      b.appendChild(h('div', 'wk-alert-meta', (d.segId ? d.segId + (d.segIndex >= 0 ? ' #' + (d.segIndex + 1) : '') + ' · ' : '') + d.code));
-      a.appendChild(b);
-      if (onGoto && d.segIndex >= 0) { a.style.cursor = 'pointer'; a.addEventListener('click', function () { onGoto(d.segIndex); }); }
-      wrap.appendChild(a);
+  // ---- Stat column (persistent, Weka-style) ---------------------------------
+  function renderStatColumn(container, parsed, sef, result) {
+    container.innerHTML = '';
+    const s = parsed.stats;
+    const ich = parsed.interchanges[0];
+    const err = result.summary.error, warn = result.summary.warning, info = result.summary.info;
+    const healthy = err === 0 && warn === 0;
+
+    // status
+    const st = h('div', 'sc-status ' + (healthy ? 'ok' : err ? 'err' : 'warn'));
+    st.appendChild(h('div', 'sc-badge', healthy ? '✓' : err ? '✕' : '!'));
+    st.appendChild(h('div', 'sc-status-t', healthy ? 'VALID' : err ? 'INVALID' : 'WARNINGS'));
+    container.appendChild(st);
+
+    // findings (Data-protection analog: N + N)
+    const fg = h('div', 'sc-group');
+    fg.appendChild(h('div', 'sc-h', 'Findings'));
+    const frow = h('div', 'sc-pair');
+    frow.appendChild(scMini(err, 'Errors', err ? 'err' : ''));
+    frow.appendChild(h('div', 'sc-plus', '+'));
+    frow.appendChild(scMini(warn, 'Warnings', warn ? 'warn' : ''));
+    fg.appendChild(frow);
+    container.appendChild(fg);
+
+    container.appendChild(dualStat('Volume', 'Interchanges', s.interchangeCount, 'Groups', s.groupCount, s.transactionCount, 'Transaction Sets'));
+    container.appendChild(dualStat('Segments', 'Total', s.segmentTotal, 'Types', Object.keys(s.segmentCounts).length, s.segmentTotal, 'Segments'));
+    container.appendChild(dualStat('Elements', 'Checked', countValidated(parsed), 'Defined', sef ? sef.counts.elements : 0, sef ? countValidated(parsed) : 0, 'Elements'));
+
+    // validation health semicircle gauge
+    const hg = h('div', 'sc-group');
+    hg.appendChild(h('div', 'sc-h', 'Validation Health'));
+    const withErr = parsed.segments.filter(function (x) { return worstOf(x.diagnostics) === 'error'; }).length;
+    const pct = parsed.segments.length ? Math.round((parsed.segments.length - withErr) / parsed.segments.length * 100) : 100;
+    hg.appendChild(semiGauge(pct));
+    container.appendChild(hg);
+
+    // profile capacity table
+    const rows = sef ? [
+      ['Profile', (sef.std.name || sef.source).slice(0, 22)],
+      ['Version', sef.std.version || '—'],
+      ['Segments', sef.counts.segments],
+      ['Elements', sef.counts.elements],
+      ['Code lists', countCodeLists(sef)],
+      ['Structures', sef.counts.sets],
+      ['Usage', ich ? (ich.usageIndicator === 'P' ? 'Production' : ich.usageIndicator === 'T' ? 'Test' : ich.usageIndicator) : '—']
+    ] : [['Profile', 'None'], ['Mode', 'Structure only']];
+    container.appendChild(capTable('Active Profile', rows));
+  }
+
+  function scMini(v, label, cls) {
+    const d = h('div', 'sc-mini');
+    d.appendChild(h('div', 'sc-mini-v' + (cls ? ' ' + cls : ''), String(v)));
+    d.appendChild(h('div', 'sc-mini-l', label));
+    return d;
+  }
+  function dualStat(title, lLabel, lVal, rLabel, rVal, bigVal, bigLabel) {
+    const g = h('div', 'sc-group');
+    g.appendChild(h('div', 'sc-h', title));
+    const row = h('div', 'sc-dual');
+    const lc = h('div', 'sc-dual-c');
+    lc.appendChild(h('div', 'sc-dual-l', lLabel)); lc.appendChild(h('div', 'sc-dual-v', String(lVal)));
+    const rc = h('div', 'sc-dual-c right');
+    rc.appendChild(h('div', 'sc-dual-l', rLabel)); rc.appendChild(h('div', 'sc-dual-v', String(rVal)));
+    row.appendChild(lc); row.appendChild(rc);
+    g.appendChild(row);
+    g.appendChild(h('div', 'sc-big', String(bigVal)));
+    return g;
+  }
+  function semiGauge(pct) {
+    const wrap = h('div', 'sc-gauge');
+    const cx = 60, cy = 58, r = 46;
+    const svg = svgEl('svg', { viewBox: '0 0 120 68', class: 'sc-gauge-svg' });
+    svg.appendChild(svgEl('path', { d: arcPath(cx, cy, r, 180, 0), class: 'sc-gauge-track', fill: 'none' }));
+    svg.appendChild(svgEl('path', { d: arcPath(cx, cy, r, 180, 180 - pct / 100 * 180), class: 'sc-gauge-val', fill: 'none' }));
+    wrap.appendChild(svg);
+    wrap.appendChild(h('div', 'sc-gauge-t', pct + '%'));
+    return wrap;
+  }
+  function arcPath(cx, cy, r, a0, a1) {
+    const s = polar(cx, cy, r, a0), e = polar(cx, cy, r, a1);
+    const large = Math.abs(a1 - a0) > 180 ? 1 : 0;
+    return 'M ' + s.x.toFixed(2) + ' ' + s.y.toFixed(2) + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + e.x.toFixed(2) + ' ' + e.y.toFixed(2);
+  }
+  function polar(cx, cy, r, deg) { const a = deg * Math.PI / 180; return { x: cx + r * Math.cos(a), y: cy - r * Math.sin(a) }; }
+  function capTable(title, rows) {
+    const g = h('div', 'sc-group');
+    g.appendChild(h('div', 'sc-h', title));
+    const t = h('div', 'sc-table');
+    rows.forEach(function (r, i) {
+      const row = h('div', 'sc-trow' + (i % 2 ? ' alt' : ''));
+      row.appendChild(h('span', 'sc-tk', r[0]));
+      row.appendChild(h('span', 'sc-tv', String(r[1])));
+      t.appendChild(row);
     });
-    return wrap;
+    g.appendChild(t);
+    return g;
   }
 
   function countCodeLists(sef) {
     let n = 0; Object.keys(sef.elements).forEach(function (k) { if (Object.keys(sef.elements[k].codes || {}).length) n++; }); return n;
-  }
-  function statCard(k, v, cls) {
-    const c = h('div', 'card'); c.appendChild(h('div', 'k', k)); c.appendChild(h('div', 'v' + (cls ? ' ' + cls : ''), String(v))); return c;
   }
   function addKV(kv, k, v) { kv.appendChild(h('div', 'kk', k)); kv.appendChild(h('div', 'vv', v)); }
 
@@ -359,31 +325,10 @@
     return wrap;
   }
 
-  function severityDonut(summary) {
-    const total = summary.error + summary.warning + summary.info;
-    const wrap = h('div', 'donut-wrap');
-    const donut = h('div', 'donut');
-    if (total === 0) {
-      donut.style.background = 'conic-gradient(var(--ok) 0 100%)';
-    } else {
-      const e = summary.error / total * 100, w = summary.warning / total * 100;
-      donut.style.background = 'conic-gradient(var(--error) 0 ' + e + '%, var(--warning) ' + e + '% ' + (e + w) + '%, var(--info) ' + (e + w) + '% 100%)';
-    }
-    const center = h('div', 'center'); center.appendChild(h('b', null, String(total))); center.appendChild(h('span', null, 'findings')); donut.appendChild(center);
-    wrap.appendChild(donut);
-    const legend = h('div', 'legend');
-    [['Errors', summary.error, 'var(--error)'], ['Warnings', summary.warning, 'var(--warning)'], ['Info', summary.info, 'var(--info)']].forEach(function (l) {
-      const li = h('div', 'li'); const sw = h('span', 'sw'); sw.style.background = l[2]; li.appendChild(sw); li.appendChild(h('span', null, l[0] + ': ' + l[1])); legend.appendChild(li);
-    });
-    if (total === 0) { const li = h('div', 'li'); li.appendChild(h('span', null, '✓ No issues found')); legend.appendChild(li); }
-    wrap.appendChild(legend);
-    return wrap;
-  }
-
   // ---- Inspector -------------------------------------------------------------
   function renderInspector(container, seg, sef) {
     container.innerHTML = '';
-    if (!seg) { container.appendChild(h('div', 'phi', 'Select a segment from the tree to inspect it.')); return; }
+    if (!seg) { container.appendChild(h('div', 'phi', 'Select a segment from the structure tree or the topology to inspect it.')); return; }
     const def = sef && sef.segments[seg.id];
     const head = h('div', 'insp-head');
     head.appendChild(h('span', 'sid', seg.id));
@@ -424,7 +369,6 @@
         vtd.appendChild(h('span', 'val empty', '(empty)'));
       }
       tr.appendChild(vtd);
-      // meaning: code description
       const mtd = document.createElement('td');
       if (elem && edef && edef.def && edef.def.codes) {
         const desc = edef.def.codes[elem.value];
@@ -432,8 +376,7 @@
         else if (Object.keys(edef.def.codes).length && elem.value !== '') mtd.appendChild(h('span', 'val empty', 'not in code list'));
       }
       tr.appendChild(mtd);
-      // row highlight for element diagnostics
-      if (elem && elem.diag) { const worst = worstOf(elem.diag); if (worst === 'error') tr.style.background = 'rgba(248,113,113,.09)'; else if (worst === 'warning') tr.style.background = 'rgba(251,191,36,.07)'; }
+      if (elem && elem.diag) { const worst = worstOf(elem.diag); if (worst === 'error') tr.classList.add('row-error'); else if (worst === 'warning') tr.classList.add('row-warning'); }
       tbody.appendChild(tr);
     }
     table.appendChild(tbody);
@@ -518,6 +461,7 @@
   global.UI = {
     renderTree: renderTree,
     renderOverview: renderOverview,
+    renderStatColumn: renderStatColumn,
     renderInspector: renderInspector,
     renderDiagnostics: renderDiagnostics,
     renderRaw: renderRaw

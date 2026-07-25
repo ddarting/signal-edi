@@ -28,11 +28,13 @@ Then:
 
 - **Structure tree** — ISA ▸ GS ▸ ST ▸ loops ▸ segments, with inline severity
   dots. Click any node to inspect it.
-- **Overview dashboard** — a cluster-console layout: a status banner, a
-  validation-health gauge, HUD stat readouts, a segment **topology ring** (one
-  node per segment, colored by severity and clickable), a profile-coverage bar,
-  an **Alerts & Events** feed, transaction/segment charts, and envelope +
-  profile summaries. The left structure panel collapses via the ☰ menu.
+- **System Overview** — a WekaFS-console-style layout: a persistent **stat
+  column** (VALID/INVALID status, findings, volume/segment/element readouts, a
+  semicircle validation-health gauge, and a striped active-profile table) beside
+  a main canvas that renders the interchange as an **isometric cube cluster** —
+  a green interchange hub linked to one cube per segment, each with a green /
+  amber / red status marker and clickable to the inspector — plus transaction
+  and segment-frequency charts. The left structure panel collapses via ☰.
 - **Segment Inspector** — every element with its reference (e.g. `NM103`), name,
   requirement (M/O/C), data type & length, value (composites split out), and the
   **decoded meaning** of coded values.
