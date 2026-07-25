@@ -28,10 +28,11 @@ Then:
 
 - **Structure tree** — ISA ▸ GS ▸ ST ▸ loops ▸ segments, with inline severity
   dots. Click any node to inspect it.
-- **Overview dashboard** — interchange/group/transaction/segment counts, error
-  & warning tallies, transaction-set and segment-frequency charts, a severity
-  donut, envelope details (sender/receiver, control numbers, **Prod/Test**
-  usage), and the active profile summary.
+- **Overview dashboard** — a cluster-console layout: a status banner, a
+  validation-health gauge, HUD stat readouts, a segment **topology ring** (one
+  node per segment, colored by severity and clickable), a profile-coverage bar,
+  an **Alerts & Events** feed, transaction/segment charts, and envelope +
+  profile summaries. The left structure panel collapses via the ☰ menu.
 - **Segment Inspector** — every element with its reference (e.g. `NM103`), name,
   requirement (M/O/C), data type & length, value (composites split out), and the
   **decoded meaning** of coded values.

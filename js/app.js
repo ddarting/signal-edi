@@ -67,6 +67,10 @@
     $('sefFile').addEventListener('change', function (e) { if (e.target.files[0]) readSefFile(e.target.files[0]); });
     $('sampleBtn').addEventListener('click', function () { loadEdi(window.SAMPLE_EDI, 'sample-837p.edi'); });
     const sb = $('settingsBtn'); if (sb && window.Settings) sb.addEventListener('click', function () { Settings.open(); });
+    const mb = $('menuBtn'); if (mb) mb.addEventListener('click', function () {
+      document.querySelector('.workspace').classList.toggle('nav-collapsed');
+      mb.classList.toggle('active');
+    });
     els.profileSelect.addEventListener('change', function (e) {
       state.sefKey = e.target.value;
       if (window.Settings && Settings.get('rememberProfile')) Settings.set('lastProfile', state.sefKey);
@@ -196,7 +200,7 @@
   function renderActiveTab() {
     if (!state.parsed) return;
     const c = els.tabcontent;
-    if (activeTab === 'overview') UI.renderOverview(c, state.parsed, state.sef, state.result);
+    if (activeTab === 'overview') UI.renderOverview(c, state.parsed, state.sef, state.result, gotoSegment);
     else if (activeTab === 'inspector') UI.renderInspector(c, state.selected, state.sef);
     else if (activeTab === 'validation') UI.renderDiagnostics(c, state.result, gotoSegment);
     else if (activeTab === 'raw') UI.renderRaw(c, state.parsed);
